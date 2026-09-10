@@ -1,0 +1,32 @@
+[build-system]
+# setuptools 77 is the first with PEP 639: a licence *expression* and the licence files
+# carried inside the wheel. Older setuptools rejects the string form of `license` outright,
+# which is the right failure: a build that could not record the split licence must not
+# produce a wheel that claims a plain one.
+requires = ["setuptools>=77", "torch>=2.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "torchhd-sparsr"
+version = "0.2.0"
+description = "Sparsr backend for Torchhd: run VSA/HDC operations on the Sparsr processor (software emulator or FPGA) via a real PyTorch device ('sparsr')."
+readme = "README.md"
+requires-python = ">=3.9"
+# The sources and libsparsr_hdc are MIT. The four Sparsr runtime binaries the wheel
+# bundles are not, and one bare "MIT" over that mix would grant redistribution and
+# reverse-engineering rights the runtime does not come with. LICENSE-RUNTIME names them.
+license = "MIT AND LicenseRef-Proprietary"
+license-files = ["LICENSE", "LICENSE-RUNTIME"]
+# Computed in setup.py, not written here: the torch requirement is an exact pin on the
+# version that compiled `_C`, and only the build knows which that was. See the comment
+# beside _torch_pin() there.
+dynamic = ["dependencies"]
+
+[project.optional-dependencies]
+test = ["pytest"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+torchhd_sparsr = ["_native/*.so"]

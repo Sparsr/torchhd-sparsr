@@ -1,0 +1,7 @@
+build/
+dist/
+*.egg-info/
+__pycache__/
+src/torchhd_sparsr/_native/
+*.so
+.pytest_cache/
