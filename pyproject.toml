@@ -8,19 +8,55 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "torchhd-sparsr"
-version = "0.2.0"
+version = "0.2.1"
 description = "Sparsr backend for Torchhd: run VSA/HDC operations on the Sparsr processor (software emulator or FPGA) via a real PyTorch device ('sparsr')."
 readme = "README.md"
 requires-python = ">=3.9"
+authors = [{ name = "Sparsr" }]
+keywords = [
+    "hyperdimensional-computing",
+    "vector-symbolic-architecture",
+    "hdc",
+    "vsa",
+    "torchhd",
+    "pytorch",
+    "sparsr",
+]
+# No `License ::` classifier: PEP 639 replaces it with the expression below, and
+# setuptools 77 rejects the two side by side. Every other axis is here so the package
+# shows up under a classifier search on PyPI, which 0.2.0 did not.
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: C++",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Typing :: Typed",
+]
 # The sources and libsparsr_hdc are MIT. The four Sparsr runtime binaries the wheel
 # bundles are not, and one bare "MIT" over that mix would grant redistribution and
 # reverse-engineering rights the runtime does not come with. LICENSE-RUNTIME names them.
 license = "MIT AND LicenseRef-Proprietary"
-license-files = ["LICENSE", "LICENSE-RUNTIME"]
-# Computed in setup.py, not written here: the torch requirement is an exact pin on the
-# version that compiled `_C`, and only the build knows which that was. See the comment
-# beside _torch_pin() there.
+# THIRD-PARTY-NOTICES is the .NET runtime's MIT notice and the notices of the components
+# inside it. Native AOT links that runtime into libsparsr_vm.so, and MIT requires the
+# notice to be included with every copy.
+license-files = ["LICENSE", "LICENSE-RUNTIME", "THIRD-PARTY-NOTICES"]
+# Computed in setup.py, not written here: the torch requirement is the minor version that
+# compiled `_C`, and only the build knows which that was. See _torch_requirement() there.
 dynamic = ["dependencies"]
+
+[project.urls]
+Homepage = "https://sparsr.com/"
+Documentation = "https://docs.sparsr.com/"
+Source = "https://github.com/Sparsr/torchhd-sparsr"
+Issues = "https://github.com/Sparsr/torchhd-sparsr/issues"
+"HDC library" = "https://github.com/Sparsr/libsparsr-hdc"
 
 [project.optional-dependencies]
 test = ["pytest"]
@@ -29,4 +65,6 @@ test = ["pytest"]
 where = ["src"]
 
 [tool.setuptools.package-data]
-torchhd_sparsr = ["_native/*.so"]
+# py.typed is the PEP 561 marker that lets a type checker read the annotations here, and
+# _C.pyi declares the compiled extension, which a type checker cannot read on its own.
+torchhd_sparsr = ["_native/*.so", "py.typed", "*.pyi"]

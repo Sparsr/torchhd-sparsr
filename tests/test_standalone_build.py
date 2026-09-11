@@ -26,7 +26,7 @@ import pytest
 PACKAGE_ROOT = pathlib.Path(__file__).resolve().parent.parent
 
 # What the public repository will contain. Not packaging/, not dist/, not build output.
-SOURCE_TREE = ["pyproject.toml", "setup.py", "README.md", "LICENSE", "LICENSE-RUNTIME", "src", "csrc"]
+SOURCE_TREE = ["pyproject.toml", "setup.py", "README.md", "LICENSE", "LICENSE-RUNTIME", "THIRD-PARTY-NOTICES", "src", "csrc"]
 
 BUNDLED_LIBRARIES = {
     "libsparsr_hdc.so",

@@ -22,8 +22,16 @@ bundled = torchhd.bundle(a, b)           # raises: see "Why bundle() refuses" be
 ```
 
 By default this targets the **Sparsr VM** (`SPARSR_BACKEND=vm`), the software device model published
-as `libsparsr_vm.so`. Set `SPARSR_BACKEND` to run against real Sparsr FPGA hardware instead -- the
-host library's own header, `sparsr.h`, lists the supported backend names.
+as `libsparsr_vm.so`. `SPARSR_BACKEND` picks the device. The Sparsr host library accepts these
+names, and the table says what each one needs from this wheel:
+
+| `SPARSR_BACKEND` | What runs | In this wheel |
+| --- | --- | --- |
+| `vm` | The Sparsr VM, in your process. **The default.** | Yes |
+| `softemu` | The original MIPS software emulator. Not usable here: see below. | Yes, but it runs the wrong instruction set for these kernels |
+| `vmproc` | The Sparsr VM in a process of its own, reached over its wire protocol. | The client is. The `sparsr-vm` executable is not: point `SPARSR_VM_BINARY` at one from the Sparsr SDK, or `SPARSR_VM_ENDPOINT` at a VM already running |
+| `fpgasim` | Sparsr on the FPGA simulator. | No. The host library falls back to `softemu` with a warning on stderr |
+| `fpgaf2` | Sparsr on a real F2 card. | No. Same fallback |
 
 **Not `softemu`, and the difference is not cosmetic.** The two backends execute different
 instruction sets: softemu runs MIPS words, the VM runs RV32I, and the kernels behind these operations
@@ -170,7 +178,13 @@ That needs a C++ compiler and the PyTorch you intend to run against, and nothing
 ## Licence
 
 The sources of this package are MIT, and so is `libsparsr_hdc`, the library every operation calls
-into. The wheel also bundles four proprietary binaries, the Sparsr host runtime and the device
-model: `libsparsr_host.so`, `libsparsr_vm.so`, `libsparsr_vmproc.so` and `libsparsr_softemu.so`.
-Their terms are in `LICENSE-RUNTIME`, which is packaged inside the wheel beside `LICENSE`. The
-package metadata says the same thing in one line: `MIT AND LicenseRef-Proprietary`.
+into. Both are on GitHub: [torchhd-sparsr](https://github.com/Sparsr/torchhd-sparsr) and
+[libsparsr-hdc](https://github.com/Sparsr/libsparsr-hdc). The wheel also bundles four proprietary
+binaries, the Sparsr host runtime and the device model: `libsparsr_host.so`, `libsparsr_vm.so`,
+`libsparsr_vmproc.so` and `libsparsr_softemu.so`. Their terms are in `LICENSE-RUNTIME`, which is
+packaged inside the wheel beside `LICENSE`. The package metadata says the same thing in one line:
+`MIT AND LicenseRef-Proprietary`.
+
+`libsparsr_vm.so` is built with .NET Native AOT, which links the .NET runtime into the binary. The
+.NET runtime is MIT, and the notices for it and for the components inside it are in
+`THIRD-PARTY-NOTICES`, the third file packaged beside the two above.
