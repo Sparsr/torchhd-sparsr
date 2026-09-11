@@ -67,6 +67,24 @@ class _SparsrDeviceModule:
     def is_available() -> bool:
         return True
 
+    # torch.manual_seed() seeds every registered device module, and warns about
+    # one that does not offer these two. Nothing on the device draws random
+    # numbers: a hypervector is generated on the host and sent over, so there
+    # is no per-device generator to seed and no fork state to lose. These
+    # answer the question rather than do anything.
+
+    @staticmethod
+    def manual_seed(seed: int) -> None:
+        return None
+
+    @staticmethod
+    def manual_seed_all(seed: int) -> None:
+        return None
+
+    @staticmethod
+    def _is_in_bad_fork() -> bool:
+        return False
+
 
 torch._register_device_module("sparsr", _SparsrDeviceModule)
 torch.utils.generate_methods_for_privateuse1_backend(for_storage=False)
