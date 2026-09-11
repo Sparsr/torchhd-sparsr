@@ -41,10 +41,12 @@ unset, so an explicit choice still wins.
 
 ## Examples
 
-- [`examples/basic`](examples/basic/example.py) runs each supported operation once, checks the
-  result against the CPU, and shows what the unsupported ones say when they refuse.
-- [`examples/mnist`](examples/mnist/README.md) recognises handwritten digits at 78.8% accuracy,
-  with every comparison against a class prototype running on Sparsr.
+- [`examples/basic`](https://github.com/Sparsr/torchhd-sparsr/tree/main/examples/basic) runs each
+  supported operation once, checks the result against the CPU, and shows what the unsupported ones
+  say when they refuse.
+- [`examples/mnist`](https://github.com/Sparsr/torchhd-sparsr/tree/main/examples/mnist) recognises
+  handwritten digits at 78.8% accuracy, with every comparison against a class prototype running on
+  Sparsr.
 
 ## What this package computes: nothing
 

@@ -33,6 +33,8 @@ import os
 # fails when this file imports torchhd_sparsr, and the host library says on
 # stderr that the backend provides none of the operations.
 #
+# The README's backend table says what each name needs from this package.
+#
 # It has to be set before torchhd_sparsr is imported: the Sparsr host library
 # reads the choice once, when the first operation runs.
 SPARSR_BACKEND = "vm"
