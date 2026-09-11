@@ -109,9 +109,10 @@ the bits inside it are free. That gives two quite different ways to fit, and onl
   fully dense hypervector 1536 bits wide, and it always fits.
 
 So a full-width dense 4096-bit BSC hypervector does not fit -- essentially all 128 lanes are occupied --
-but a dense 1536-bit one does. Measured on MNIST, that narrower dense code is worth about 65% accuracy
-against about 80% at the full 4096 bits, so the ceiling costs real accuracy rather than blocking dense
-codes outright. An uncompressed CMEM path would lift it; it is planned but not built.
+but a dense 1536-bit one does. The MNIST example measures what that costs: 78.79% accuracy with the
+1536-bit code against 81.01% with a full-width 4096-bit one, on the same algorithm and seed over all
+60,000 training and 10,000 test images. So the ceiling costs a little over two points of accuracy
+rather than blocking dense codes outright. An uncompressed CMEM path would lift it; it is planned but not built.
 
 ## Why `bundle()` refuses
 
