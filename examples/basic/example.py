@@ -1,9 +1,32 @@
-import shutil
+import os
 
-import torch
-import torchhd
+# --- Where this example runs: the Sparsr VM ---------------------------------
+#
+# Everything below runs on the Sparsr VM, the software model of the processor
+# that ships inside the wheel. No Sparsr hardware is needed, or used.
+#
+# ONE LINE MOVES IT TO HARDWARE. Change "vm" to "fpgaf2" on the line below and
+# every operation in this file runs on a real Sparsr FPGA instead -- nothing
+# else in the file changes, the same way a CUDA script does not change when you
+# swap the GPU under it. The host library's own header, sparsr.h, lists the
+# backend names.
+#
+# Not today, though: the published wheel bundles the VM and the MIPS emulator
+# only. Asking it for "fpgaf2" now gets a note on stderr and a silent fall back
+# to that emulator, which would execute these RV32I kernels as MIPS -- wrong
+# answers rather than a clean failure. Leave it on "vm" until Sparsr publishes
+# a runtime that carries the FPGA backend.
+#
+# This has to be set before torchhd_sparsr is imported: the host runtime
+# resolves the backend once, on first use. The package sets the same variable
+# itself, but only when it is unset, so an explicit choice here wins -- which
+# is the point of spelling it out rather than relying on the default.
+os.environ["SPARSR_BACKEND"] = "vm"
 
-import torchhd_sparsr  # noqa: F401  (registers the "sparsr" device)
+import torch  # noqa: E402  (must follow the backend selection above)
+import torchhd  # noqa: E402
+
+import torchhd_sparsr  # noqa: E402,F401  (registers the "sparsr" device)
 
 
 def active_bit_positions(tensor):
@@ -25,15 +48,16 @@ def check(name, cpu_result, sparsr_result):
 a = torchhd.random(1, 4096, vsa="BSC", sparsity=0.998).squeeze()
 b = torchhd.random(1, 4096, vsa="BSC", sparsity=0.998).squeeze()
 
-print("--- Active Bits (these hypervectors are >99.8% sparse) ---")
+print(f"--- Every operation below runs on the Sparsr {os.environ['SPARSR_BACKEND']} backend ---")
+
+print("\n--- Active Bits (these hypervectors are >99.8% sparse) ---")
 print(f"Hypervector a:\n\t{active_bit_positions(a)}")
 print(f"Hypervector b:\n\t{active_bit_positions(b)}")
 
-# Move both hypervectors to the Sparsr processor (the software emulator by
-# default; set SPARSR_BACKEND=fpgaf2 to run on real Sparsr FPGA hardware).
-# From here on, standard Torchhd calls transparently dispatch to Sparsr
-# hardware -- no torchhd_sparsr-specific API needed, same as moving tensors
-# to "cuda".
+# Move both hypervectors to the Sparsr processor -- the VM pinned at the top of
+# this file. From here on, standard Torchhd calls transparently dispatch to
+# Sparsr -- no torchhd_sparsr-specific API needed, same as moving tensors to
+# "cuda".
 a_sparsr = a.to("sparsr")
 b_sparsr = b.to("sparsr")
 
