@@ -21,8 +21,8 @@ similarity = torchhd.cosine_similarity(a, b)  # intersection on Sparsr, counting
 bundled = torchhd.bundle(a, b)           # raises: see "Why bundle() refuses" below
 ```
 
-By default this targets the **Sparsr VM** (`SPARSR_BACKEND=vm`), the C# device model published as
-`libsparsr_vm.so`. Set `SPARSR_BACKEND` to run against real Sparsr FPGA hardware instead -- the
+By default this targets the **Sparsr VM** (`SPARSR_BACKEND=vm`), the software device model published
+as `libsparsr_vm.so`. Set `SPARSR_BACKEND` to run against real Sparsr FPGA hardware instead -- the
 host library's own header, `sparsr.h`, lists the supported backend names.
 
 **Not `softemu`, and the difference is not cosmetic.** The two backends execute different
@@ -151,7 +151,7 @@ That is the whole install step. The wheel already contains:
 - the compiled PyTorch extension that registers the `"sparsr"` device.
 
 Operations run on the software emulator by default, so Sparsr hardware is optional. You do not
-need the .NET SDK, a RISC-V toolchain, or a compiler. A wheel is published per CPython version,
+need a RISC-V toolchain, a compiler, or any other SDK. A wheel is published per CPython version,
 for Linux on x86-64.
 
 **Each wheel is built against one PyTorch minor version** and uses libtorch's C++ ABI directly, the

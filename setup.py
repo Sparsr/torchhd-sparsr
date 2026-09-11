@@ -13,7 +13,7 @@ Developer Zone, and it holds exactly what this build needs:
     lib/libsparsr_vmproc.so
     lib/libsparsr_softemu.so
 
-Nothing else is needed: no RISC-V toolchain, no .NET, no other checkout. With
+Nothing else is needed: no RISC-V toolchain, no other SDK, no other checkout. With
 SPARSR_HDC_ROOT unset the build stops and says so.
 """
 
