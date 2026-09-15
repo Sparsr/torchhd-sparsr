@@ -30,7 +30,7 @@ def test_bind_is_self_inverse(random_pair):
 
 def test_bind_matches_cpu_across_many_random_pairs(random_pair):
     """bind() is deterministic (XOR), so this should match bit-for-bit every
-    time a pair of hypervectors is sparse enough to fit CMEM."""
+    time a pair of hypervectors is sparse enough to fit WMEM."""
     mismatches = 0
     trials = 30
     for seed in range(trials):

@@ -88,9 +88,9 @@ has -- while silently turning this package's bundle into a union.
 Everything else (arbitrary tensor ops, printing/repr, arithmetic) isn't implemented for the `"sparsr"`
 device -- move a tensor back with `.to("cpu")` first.
 
-## What fits in CMEM, and what does not
+## What fits in WMEM, and what does not
 
-Sparsr's CMEM always transfers data through its native LIL-32b sparse compression codec. That codec
+Sparsr's WMEM always transfers data through its native LIL-32b sparse compression codec. That codec
 splits each 512-byte (4096-bit) block into 128 four-byte lanes and stores one entry per **non-zero
 lane** -- a one-byte lane index plus the whole four-byte lane value -- with room for 48 entries in a
 240-byte row. Moving a tensor to `"sparsr"` checks that and raises a clear `RuntimeError` rather than
@@ -112,17 +112,17 @@ So a full-width dense 4096-bit BSC hypervector does not fit -- essentially all 1
 but a dense 1536-bit one does. The MNIST example measures what that costs: 78.79% accuracy with the
 1536-bit code against 81.01% with a full-width 4096-bit one, on the same algorithm and seed over all
 60,000 training and 10,000 test images. So the ceiling costs a little over two points of accuracy
-rather than blocking dense codes outright. An uncompressed CMEM path would lift it; it is planned but not built.
+rather than blocking dense codes outright. An uncompressed WMEM path would lift it; it is planned but not built.
 
 ## Why `bundle()` refuses
 
 torchhd's BSC `bundle(a, b)` is `where(a == b, a, tiebreak)`: keep the shared value wherever the two
 hypervectors agree, and resolve every position where they disagree with a **fair** coin flip. That
-tiebreak vector is dense by construction, and by the section above dense data cannot be stored in CMEM
+tiebreak vector is dense by construction, and by the section above dense data cannot be stored in WMEM
 at all.
 
 Sparsr therefore has no way to compute a faithful bundle today. Drawing the tiebreak at the low density
-CMEM *can* store makes the coin overwhelmingly biased towards 0, so every disagreeing position resolves
+WMEM *can* store makes the coin overwhelmingly biased towards 0, so every disagreeing position resolves
 to 0 and the bundle of two sparse hypervectors comes back as the **all-zero hypervector** -- a
 valid-looking tensor carrying no information at all. Measured at `sparsity=0.998`:
 
@@ -140,20 +140,20 @@ Bundle on the host (`.to("cpu")`) in the meantime.
 In host memory. A `"sparsr"` tensor holds its 4096 bits on the host, and each operation sends its
 operands to the device and reads the result back.
 
-They used to be resident: a tensor's storage pointer encoded a CMEM row, and the bits stayed on the
+They used to be resident: a tensor's storage pointer encoded a WMEM row, and the bits stayed on the
 device between operations. That could not survive moving onto `libsparsr_hdc`, and it should not have.
-The library reserves CMEM rows 0 to 31 -- every row there is -- from `hdc_init()` onwards, and nothing
+The library reserves WMEM rows 0 to 31 -- every row there is -- from `hdc_init()` onwards, and nothing
 on a Sparsr device arbitrates who owns a row. Residency here meant two libraries writing the same rows
 with no error on either side, which is the collision the HDC library's own device memory layout
 names as the one it cannot prevent. One
-owner of CMEM is the only arrangement that works today.
+owner of WMEM is the only arrangement that works today.
 
 What it costs is a host round trip per operation, which matters for chained work: `bind()` then
 `bundle()` no longer keeps the intermediate on the device. A host-side memory manager would let
 residency come back, for both libraries at once; it is planned but not built.
 
 Independently of that, `.to("sparsr")` supports exactly one 4096-bit hypervector per tensor -- a batch
-has to be moved one at a time. Giving CMEM real capacity is planned but not built.
+has to be moved one at a time. Giving WMEM real capacity is planned but not built.
 
 ## Installing
 
