@@ -11,7 +11,7 @@ annotations of its own.
 import torch
 
 LIL_MAX_NONZERO_CHUNKS: int
-"""How many non-zero 32-bit lanes a CMEM row can hold under the LIL-32b codec."""
+"""How many non-zero 32-bit lanes a WMEM row can hold under the LIL-32b codec."""
 
 LIL_CHUNK_COUNT: int
 """How many 32-bit lanes a 4096-bit hypervector has."""

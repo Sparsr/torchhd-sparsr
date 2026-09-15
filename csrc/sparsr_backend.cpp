@@ -14,15 +14,15 @@
 //
 // A "sparsr" tensor holds its bits in host memory, and each operation sends its
 // operands to the device and reads the result back. It used to be resident: a
-// tensor's storage pointer encoded a CMEM row, and the bits stayed on the device
+// tensor's storage pointer encoded a WMEM row, and the bits stayed on the device
 // between operations.
 //
 // That could not survive this change, and it should not have. libsparsr_hdc
-// reserves CMEM rows 0 to 31 -- every row there is -- from hdc_init() onwards,
+// reserves WMEM rows 0 to 31 -- every row there is -- from hdc_init() onwards,
 // and nothing on a Sparsr device arbitrates who owns a row. Residency here meant
 // two libraries writing the same rows with no error on either side, which
 // the HDC library's own device memory layout names as the exact
-// collision it cannot prevent. One owner of CMEM is the only arrangement that
+// collision it cannot prevent. One owner of WMEM is the only arrangement that
 // works today. A host-side memory manager would let residency come back; it is
 // planned and not built.
 //
@@ -81,13 +81,13 @@ void from_hypervector(const hdc_hypervector& vector, bool* elements) {
 
 std::string density_message(const char* label, uint32_t lanes) {
   return std::string("torchhd_sparsr: ") + label +
-      " is too dense for Sparsr's CMEM: " + std::to_string(lanes) + " of " +
+      " is too dense for Sparsr's WMEM: " + std::to_string(lanes) + " of " +
       std::to_string(HDC_LANES) +
-      " 32-bit chunks are non-zero, but the LIL-32b compression codec used by CMEM only has "
+      " 32-bit chunks are non-zero, but the LIL-32b compression codec used by WMEM only has "
       "room for " +
       std::to_string(HDC_MAX_STORABLE_LANES) +
       ". This is a known hardware limit, not a bug in your code: use a sparser hypervector, "
-      "e.g. torchhd.random(..., vsa='BSC', sparsity=0.998). An uncompressed CMEM path that "
+      "e.g. torchhd.random(..., vsa='BSC', sparsity=0.998). An uncompressed WMEM path that "
       "would lift this ceiling is planned but not built.";
 }
 
@@ -102,13 +102,13 @@ void check_hdc(hdc_status status, const char* operation) {
       status != HDC_ERROR_TOO_DENSE,
       "torchhd_sparsr: the result of ",
       operation,
-      " is too dense for Sparsr's CMEM: it occupies more than the ",
+      " is too dense for Sparsr's WMEM: it occupies more than the ",
       HDC_MAX_STORABLE_LANES,
       " of ",
       HDC_LANES,
       " non-zero 32-bit chunks the LIL-32b compression codec has room for. This is a known "
       "hardware limit, not a bug in your code: use sparser hypervectors. An uncompressed "
-      "CMEM path that would lift this ceiling is planned but not built.");
+      "WMEM path that would lift this ceiling is planned but not built.");
   TORCH_CHECK(
       false,
       "torchhd_sparsr: libsparsr_hdc reported ",
@@ -127,7 +127,7 @@ void check_fits_device(const hdc_hypervector& vector, const char* label) {
 // Storage
 // =====================================================================
 // A "sparsr" tensor's storage is ordinary host memory -- see the note at the top
-// of this file for why it is no longer a CMEM row. The allocator still exists
+// of this file for why it is no longer a WMEM row. The allocator still exists
 // rather than reusing the CPU one because it is where the one-hypervector-per-
 // tensor rule is enforced: a batched .to("sparsr") has to fail here, loudly,
 // rather than being quietly split or truncated later.
@@ -274,7 +274,7 @@ at::Tensor sparsr__copy_from(const at::Tensor& self, const at::Tensor& dst, bool
       "torchhd_sparsr only supports dtype=torch.bool (BSC) hypervectors.");
 
   // The admission check happens on the way in, not on the way out: a hypervector too dense
-  // for a compressed CMEM row cannot be an operand to anything, so refusing it here is what
+  // for a compressed WMEM row cannot be an operand to anything, so refusing it here is what
   // keeps every later operation from having to.
   if (!self_is_sparsr && dst_is_sparsr) {
     at::Tensor contiguous_source = self.contiguous();
@@ -407,7 +407,7 @@ std::tuple<int64_t, int64_t, int64_t> similarity(const at::Tensor& a, const at::
           static_cast<int64_t>(counts.right_weight)};
 }
 
-// hdc_init() loads libsparsr_hdc's kernels into instruction memory and claims CMEM rows 0
+// hdc_init() loads libsparsr_hdc's kernels into instruction memory and claims WMEM rows 0
 // to 31. It calls sparsr_kernel_init(), which clears every memory on the device -- harmless
 // here, because a "sparsr" tensor's bits live in host memory and are sent per operation.
 void init_native() {
@@ -433,7 +433,7 @@ PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
   m.def("similarity", &similarity, "Overlap, left weight and right weight of two 'sparsr' hypervectors.");
   // Exported so _patches.py can quote the real ceiling in its error messages
   // rather than re-typing the numbers. Two copies of one constant is how a
-  // CMEM-depth mismatch (64 in the RTL, 32 in softemu) once happened.
+  // WMEM-depth mismatch (64 in the RTL, 32 in softemu) once happened.
   m.attr("LIL_MAX_NONZERO_CHUNKS") = HDC_MAX_STORABLE_LANES;
   m.attr("LIL_CHUNK_COUNT") = HDC_LANES;
 }

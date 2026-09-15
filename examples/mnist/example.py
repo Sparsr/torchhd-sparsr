@@ -16,7 +16,7 @@ wide AND instruction plus its population count. Encoding and training run on
 the host with plain Torchhd, because the two operations they need are the two
 this package cannot run on Sparsr yet. `torchhd.bundle()` refuses on the
 "sparsr" device -- the fair coin it needs for a tie is too dense to store in
-CMEM -- and `torchhd.multiset()` needs a batch of hypervectors, which the
+WMEM -- and `torchhd.multiset()` needs a batch of hypervectors, which the
 device does not take. Both are hardware limits with planned fixes, and the
 README says more about each.
 """
@@ -49,7 +49,7 @@ import torchhd  # noqa: E402
 
 import torchhd_sparsr  # noqa: E402,F401  (registers the "sparsr" device)
 
-# A Sparsr hypervector is 4096 bits, and CMEM stores it as 128 lanes of 32
+# A Sparsr hypervector is 4096 bits, and WMEM stores it as 128 lanes of 32
 # bits. A row holds at most 48 non-zero lanes, so a hypervector whose set bits
 # all live inside 48 lanes always fits, at any density -- see the README.
 DIMENSIONS = 4096
@@ -70,7 +70,7 @@ def parse_arguments(argv):
     parser.add_argument("--seed", type=int, default=1, help="Seed for the item memory.")
     arguments = parser.parse_args(argv)
     if not 1 <= arguments.lanes <= MAX_LANES:
-        parser.error(f"--lanes must be between 1 and {MAX_LANES}: a CMEM row holds no more than {MAX_LANES} lanes.")
+        parser.error(f"--lanes must be between 1 and {MAX_LANES}: a WMEM row holds no more than {MAX_LANES} lanes.")
     return arguments
 
 
