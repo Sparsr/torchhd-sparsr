@@ -4,7 +4,7 @@ import torchhd
 
 import torchhd_sparsr  # noqa: F401  (registers the "sparsr" device)
 
-# Dense (sparsity=0.5, torchhd's default) hypervectors overflow Sparsr's CMEM
+# Dense (sparsity=0.5, torchhd's default) hypervectors overflow Sparsr's WMEM
 # LIL-32b compression codec, so tests use a low density that reliably fits --
 # see torchhd_sparsr/csrc/sparsr_backend.cpp's check_fits_lil_compression.
 SPARSITY = 0.998

@@ -17,7 +17,7 @@ changes needed beyond `.to("sparsr")`::
 
     result = torchhd.bind(a, b)  # dispatches to Sparsr's WXOR instruction
 
-Hypervectors must be sparse to fit Sparsr's CMEM (see the README); dense
+Hypervectors must be sparse to fit Sparsr's WMEM (see the README); dense
 (sparsity=0.5, the Torchhd default) hypervectors will raise a RuntimeError
 when moved to "sparsr". Only single hypervectors are supported, not batches
 (see the README).
@@ -25,7 +25,7 @@ when moved to "sparsr". Only single hypervectors are supported, not batches
 Operations Sparsr cannot compute correctly raise rather than returning a
 plausible-looking wrong answer. `bundle()` raises a RuntimeError for any pair
 of hypervectors that disagree anywhere: torchhd resolves those positions with
-a fair coin flip, and a fair coin flip is too dense for CMEM to store.
+a fair coin flip, and a fair coin flip is too dense for WMEM to store.
 `permute()` raises NotImplementedError -- it needs a wide bit-rotate
 instruction Sparsr hardware doesn't have yet.
 """
@@ -53,7 +53,7 @@ from . import _C  # noqa: E402
 _NATIVE_DIR = pathlib.Path(__file__).parent / "_native"
 
 # Claims the device for libsparsr_hdc: loads its kernels into instruction memory and
-# reserves the CMEM rows they use. Nothing arbitrates those rows, so this package holds
+# reserves the WMEM rows they use. Nothing arbitrates those rows, so this package holds
 # none of its own -- see the note at the top of csrc/sparsr_backend.cpp.
 _C.init_native()
 torch.utils.rename_privateuse1_backend("sparsr")

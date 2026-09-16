@@ -3,9 +3,9 @@ plausible-looking wrong answer.
 
 The dangerous one is `bundle()`. torchhd's BSC bundle resolves each position
 where the two operands disagree with a fair coin flip; a fair coin flip is
-dense, and dense data cannot be stored in Sparsr's CMEM (the LIL-32b codec has
+dense, and dense data cannot be stored in Sparsr's WMEM (the LIL-32b codec has
 room for 48 of 128 32-bit chunks), so torchhd_sparsr draws its tiebreak at the
-low density CMEM can store. That leaves essentially every disagreeing position
+low density WMEM can store. That leaves essentially every disagreeing position
 at 0, and the bundle of two sparse hypervectors comes back as the *zero*
 hypervector -- a valid-looking tensor carrying no information at all.
 
@@ -35,7 +35,7 @@ def test_bundle_raises_rather_than_returning_zeros(random_pair):
 
 def test_bundle_never_returns_a_zero_hypervector(random_pair):
     """The exact regression, stated as the property that must hold forever --
-    including after the uncompressed CMEM path lifts the density ceiling and bundle() starts
+    including after the uncompressed WMEM path lifts the density ceiling and bundle() starts
     succeeding: whatever bundle() does, it must never hand back a tensor with
     no set bits when its operands had some."""
     raised = 0
@@ -99,5 +99,5 @@ def test_hardware_gap_messages_name_the_missing_hardware():
 def test_dense_rejection_names_the_density_limit():
     torch.manual_seed(0)
     dense = torchhd.random(1, 4096, vsa="BSC", sparsity=0.5).squeeze()
-    with pytest.raises(RuntimeError, match="too dense for Sparsr's CMEM"):
+    with pytest.raises(RuntimeError, match="too dense for Sparsr's WMEM"):
         dense.to("sparsr")

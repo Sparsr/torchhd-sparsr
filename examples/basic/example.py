@@ -38,7 +38,7 @@ def check(name, cpu_result, sparsr_result):
         raise AssertionError(f"{name}: Sparsr result does not match the CPU result.")
 
 
-# Create 4096-bit hypervectors. Sparsr's CMEM transfers data through a sparse
+# Create 4096-bit hypervectors. Sparsr's WMEM transfers data through a sparse
 # compression codec, so hypervectors need a low density of active bits to fit
 # -- see torchhd_sparsr's README for details.
 a = torchhd.random(1, 4096, vsa="BSC", sparsity=0.998).squeeze()
@@ -63,10 +63,10 @@ check("bind", torchhd.bind(a, b), bind_result)
 
 # --- bundle (VSA majority vote): refused, rather than answered wrongly ---
 # torchhd resolves every position where the two operands disagree with a fair
-# coin flip, and a fair coin flip is far too dense to store in Sparsr's CMEM.
+# coin flip, and a fair coin flip is far too dense to store in Sparsr's WMEM.
 # Sparsr would have to use a sparse tiebreak, which resolves those positions
 # to 0 and hands back the all-zero hypervector. It raises instead; the
-# uncompressed CMEM path is the hardware change that would lift the ceiling.
+# uncompressed WMEM path is the hardware change that would lift the ceiling.
 try:
     torchhd.bundle(a_sparsr, b_sparsr)
     raise AssertionError("bundle() should have refused these operands.")
