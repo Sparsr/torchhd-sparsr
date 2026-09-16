@@ -88,7 +88,7 @@ not because a vote is unsuited to the device:
 
 - **`torchhd.bundle()` refuses on the `"sparsr"` device.** Where two hypervectors disagree,
   Torchhd decides the position with a fair coin flip, and a fair coin flip is too dense to store
-  in the processor's co-processor memory. The package raises an error rather than returning the
+  in the processor's wide memory. The package raises an error rather than returning the
   all-zero hypervector that a sparse coin would produce.
 - **`torchhd.multiset()` needs a batch**, and a `"sparsr"` tensor is one hypervector.
 
@@ -100,7 +100,7 @@ device without changing what the algorithm is.
 
 ### Dense codes, 48 lanes wide
 
-The device receives a hypervector as a co-processor memory row, and **a row stores at most 48
+The device receives a hypervector as a wide memory row, and **a row stores at most 48
 non-zero four-byte lanes out of 128**. The limit counts *lanes*, never set bits, and it stores
 each occupied lane whole, so bits inside an occupied lane are free.
 
@@ -150,7 +150,7 @@ directly. Measured on 6,000 training and 1,000 test images:
 | 16 | 512 | 71.9% |
 | 48 | 1536 | 73.5% |
 
-48 is the widest a co-processor memory row can hold, so 1,536 bits is the ceiling this example
+48 is the widest a wide memory row can hold, so 1,536 bits is the ceiling this example
 can reach today.
 
 ```sh
