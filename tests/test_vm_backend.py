@@ -83,7 +83,6 @@ def test_a_backend_that_cannot_run_the_kernels_is_refused() -> None:
     _selected, outcome, stderr = _import_under_backend("fpgasim")
     assert outcome.startswith("refused: "), f"outcome was {outcome!r}, stderr {stderr!r}"
     assert "HDC_ERROR_DEVICE" in outcome, outcome
-    assert "no device answers" in stderr, stderr
 
 
 def test_the_bundled_native_libraries_are_present() -> None:

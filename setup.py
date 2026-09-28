@@ -44,6 +44,11 @@ NATIVE_LIBS = (
     "libsparsr_hdc.so",
 )
 
+# An older runtime release links its software emulator into libsparsr_host.so, so a tarball
+# from that release carries it and the host library cannot load without it. It travels
+# with the wheel only when the tarball has it. Current releases do not.
+LEGACY_NATIVE_LIBS = ("libsparsr_softemu.so",)
+
 def _hdc_root() -> pathlib.Path:
     """The unpacked HDC tarball, or an error that says what to set and where to get it."""
     configured = os.environ.get("SPARSR_HDC_ROOT")
@@ -90,11 +95,12 @@ def _strip(binary: pathlib.Path) -> None:
 
 
 def _stage_native(root: pathlib.Path) -> None:
-    """Copy the five libraries into the package so the wheel carries them, stripped."""
+    """Copy the runtime libraries into the package so the wheel carries them, stripped."""
     if NATIVE_DIR.exists():
         shutil.rmtree(NATIVE_DIR)
     NATIVE_DIR.mkdir(parents=True)
-    for lib_name in NATIVE_LIBS:
+    legacy = [name for name in LEGACY_NATIVE_LIBS if (root / "lib" / name).exists()]
+    for lib_name in (*NATIVE_LIBS, *legacy):
         staged = NATIVE_DIR / lib_name
         shutil.copy2(root / "lib" / lib_name, staged)
         _strip(staged)

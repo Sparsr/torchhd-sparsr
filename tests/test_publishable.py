@@ -223,7 +223,8 @@ def test_the_wheel_declares_its_split_licence():
     assert shipped == ["LICENSE", "LICENSE-RUNTIME", "THIRD-PARTY-NOTICES"], f"licence files inside the wheel: {shipped}"
 
     runtime_terms = (licences_dir / "LICENSE-RUNTIME").read_text(encoding="utf-8")
-    for lib in ("libsparsr_host.so", "libsparsr_vm.so", "libsparsr_vmproc.so"):
+    bundled = {p.name for p in _shipped_binaries()}
+    for lib in ("libsparsr_host.so", "libsparsr_vm.so", "libsparsr_vmproc.so", *(bundled & {"libsparsr_softemu.so"})):
         assert lib in runtime_terms, f"{lib} is bundled but LICENSE-RUNTIME does not name it"
     assert "libsparsr_hdc.so" in runtime_terms, (
         "LICENSE-RUNTIME should say in so many words that the HDC library is not covered by it"
@@ -297,9 +298,11 @@ def _shipped_binaries() -> list[pathlib.Path]:
 
 
 def test_the_package_ships_the_binaries_these_checks_expect():
-    """Six ELF files: the extension and the five runtime libraries. Fewer means the
-    checks below stopped checking something."""
-    assert len(_shipped_binaries()) == 6, [p.name for p in _shipped_binaries()]
+    """The extension and the four runtime libraries, plus the software emulator when the wheel
+    was built from an older runtime release. Fewer means the checks below stopped checking
+    something."""
+    names = {p.name for p in _shipped_binaries()}
+    assert len(names - {"libsparsr_softemu.so"}) == 5, sorted(names)
 
 
 @pytest.mark.parametrize("path", _shipped_binaries(), ids=_display_name)

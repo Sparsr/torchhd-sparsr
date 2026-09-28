@@ -13,6 +13,10 @@ Sparsr device model. They are proprietary software of Sparsr:
     libsparsr_vm.so
     libsparsr_vmproc.so
 
+A wheel built from an older runtime release also carries libsparsr_softemu.so,
+the software emulator that release links into libsparsr_host.so. It is covered
+by the same terms.
+
 They are provided to you for running this package and applications built on it.
 They are not open source. You may not redistribute them other than as part of an
 unmodified copy of this package, and you may not reverse engineer, decompile or
