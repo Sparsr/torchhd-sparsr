@@ -1,9 +1,28 @@
-import shutil
+import os
 
-import torch
-import torchhd
+# Where these operations run. "vm" is the Sparsr VM: a model of the Sparsr
+# processor, in software, that ships inside this package. So this example needs
+# no Sparsr hardware, and every number it prints below comes from that model.
+#
+# Switching to hardware is this one string, and nothing else in this file. When
+# Sparsr hardware support is published, "fpgaf2" runs the same code on a real
+# Sparsr card. That backend is not in the package yet, so choosing it today
+# fails when this file imports torchhd_sparsr, and the host library says on
+# stderr that the backend provides none of the operations.
+#
+# The README's backend table says what each name needs from this package.
+#
+# It has to be set before torchhd_sparsr is imported: the Sparsr host library
+# reads the choice once, when the first operation runs. The package fills the
+# same value in when nothing has set it, so this line changes no behaviour
+# today. It is here to say out loud what is running.
+SPARSR_BACKEND = "vm"
+os.environ["SPARSR_BACKEND"] = SPARSR_BACKEND
 
-import torchhd_sparsr  # noqa: F401  (registers the "sparsr" device)
+import torch  # noqa: E402  (both imports must follow the backend selection above)
+import torchhd  # noqa: E402
+
+import torchhd_sparsr  # noqa: E402,F401  (registers the "sparsr" device)
 
 
 def active_bit_positions(tensor):
@@ -19,21 +38,20 @@ def check(name, cpu_result, sparsr_result):
         raise AssertionError(f"{name}: Sparsr result does not match the CPU result.")
 
 
-# Create 4096-bit hypervectors. Sparsr's CMEM transfers data through a sparse
+# Create 4096-bit hypervectors. Sparsr's WMEM transfers data through a sparse
 # compression codec, so hypervectors need a low density of active bits to fit
 # -- see torchhd_sparsr's README for details.
 a = torchhd.random(1, 4096, vsa="BSC", sparsity=0.998).squeeze()
 b = torchhd.random(1, 4096, vsa="BSC", sparsity=0.998).squeeze()
 
+print(f"--- Running on the Sparsr '{SPARSR_BACKEND}' backend ---")
 print("--- Active Bits (these hypervectors are >99.8% sparse) ---")
 print(f"Hypervector a:\n\t{active_bit_positions(a)}")
 print(f"Hypervector b:\n\t{active_bit_positions(b)}")
 
-# Move both hypervectors to the Sparsr processor (the Sparsr VM, a software
-# model of the processor, by default; set SPARSR_BACKEND=fpgaf2 to run on
-# real Sparsr FPGA hardware).
-# From here on, standard Torchhd calls transparently dispatch to Sparsr
-# hardware -- no torchhd_sparsr-specific API needed, same as moving tensors
+# Move both hypervectors to the Sparsr processor, which is the VM selected at
+# the top of this file. From here on, standard Torchhd calls dispatch to Sparsr
+# on their own -- no torchhd_sparsr-specific API needed, same as moving tensors
 # to "cuda".
 a_sparsr = a.to("sparsr")
 b_sparsr = b.to("sparsr")
@@ -45,10 +63,10 @@ check("bind", torchhd.bind(a, b), bind_result)
 
 # --- bundle (VSA majority vote): refused, rather than answered wrongly ---
 # torchhd resolves every position where the two operands disagree with a fair
-# coin flip, and a fair coin flip is far too dense to store in Sparsr's CMEM.
+# coin flip, and a fair coin flip is far too dense to store in Sparsr's WMEM.
 # Sparsr would have to use a sparse tiebreak, which resolves those positions
 # to 0 and hands back the all-zero hypervector. It raises instead; the
-# uncompressed CMEM path is the hardware change that would lift the ceiling.
+# uncompressed WMEM path is the hardware change that would lift the ceiling.
 try:
     torchhd.bundle(a_sparsr, b_sparsr)
     raise AssertionError("bundle() should have refused these operands.")

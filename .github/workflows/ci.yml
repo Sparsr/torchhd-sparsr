@@ -2,6 +2,7 @@ name: CI
 
 # Builds the package against an unpacked Sparsr HDC tarball and runs its tests on the
 # Sparsr VM, including the one that builds the package again from a copy of its sources.
+# Then runs both examples, because no test covers them.
 #
 # The tarball is fetched from a Sparsr release with a read-only token. A pull request from
 # a fork has no access to that token, so it cannot run the full check; a maintainer pushes
@@ -51,8 +52,13 @@ jobs:
 
       # The CPU wheel: the default index pulls the CUDA build and gigabytes of nvidia-*
       # packages that nothing here uses.
+      #
+      # torchvision is here for the MNIST example, which reads the dataset with
+      # it. It goes in the same command as torch so that the resolver picks a
+      # matching pair once, rather than pulling a different torch later and
+      # breaking the extension this job compiled against it.
       - name: Install PyTorch
-        run: pip install torch --index-url https://download.pytorch.org/whl/cpu
+        run: pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
 
       - name: Install the package
         run: |
@@ -61,3 +67,31 @@ jobs:
 
       - name: Run the tests
         run: pytest -v tests
+
+      # The examples are what a reader runs first, and no test covers them. The
+      # basic one checks each result against the CPU and raises when they
+      # differ, so running it is the check.
+      #
+      # MNIST runs on a slice: 2,000 training and 200 test images take about 5
+      # seconds, against 33 for the full run, and the full run proves nothing
+      # the slice does not. It needs an accuracy floor as well as an exit code,
+      # because a broken encoding still prints a number, and 10% would look
+      # exactly like a pass. A working slice scores about 72%, and the floor is
+      # 60% so that ordinary variation never fails the job.
+      - name: Run the examples
+        run: |
+          set -euo pipefail
+          python examples/basic/example.py
+          python examples/mnist/example.py --train 2000 --test 200 | tee mnist.log
+          accuracy=$(sed -n 's/^Accuracy: \([0-9.]*\)%.*/\1/p' mnist.log)
+          if [[ -z "$accuracy" ]]; then
+            echo "The MNIST example printed no accuracy line."
+            exit 1
+          fi
+          awk -v measured="$accuracy" 'BEGIN {
+            if (measured + 0 < 60) {
+              printf "MNIST accuracy %s%% is below the 60%% floor.\n", measured
+              exit 1
+            }
+            printf "MNIST accuracy %s%%, above the 60%% floor.\n", measured
+          }'

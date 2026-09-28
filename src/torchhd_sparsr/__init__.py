@@ -17,7 +17,7 @@ changes needed beyond `.to("sparsr")`::
 
     result = torchhd.bind(a, b)  # dispatches to Sparsr's WXOR instruction
 
-Hypervectors must be sparse to fit Sparsr's CMEM (see the README); dense
+Hypervectors must be sparse to fit Sparsr's WMEM (see the README); dense
 (sparsity=0.5, the Torchhd default) hypervectors will raise a RuntimeError
 when moved to "sparsr". Only single hypervectors are supported, not batches
 (see the README).
@@ -25,7 +25,7 @@ when moved to "sparsr". Only single hypervectors are supported, not batches
 Operations Sparsr cannot compute correctly raise rather than returning a
 plausible-looking wrong answer. `bundle()` raises a RuntimeError for any pair
 of hypervectors that disagree anywhere: torchhd resolves those positions with
-a fair coin flip, and a fair coin flip is too dense for CMEM to store.
+a fair coin flip, and a fair coin flip is too dense for WMEM to store.
 `permute()` raises NotImplementedError -- it needs a wide bit-rotate
 instruction Sparsr hardware doesn't have yet.
 """
@@ -53,7 +53,7 @@ from . import _C  # noqa: E402
 _NATIVE_DIR = pathlib.Path(__file__).parent / "_native"
 
 # Claims the device for libsparsr_hdc: loads its kernels into instruction memory and
-# reserves the CMEM rows they use. Nothing arbitrates those rows, so this package holds
+# reserves the WMEM rows they use. Nothing arbitrates those rows, so this package holds
 # none of its own -- see the note at the top of csrc/sparsr_backend.cpp.
 _C.init_native()
 torch.utils.rename_privateuse1_backend("sparsr")
@@ -66,6 +66,24 @@ class _SparsrDeviceModule:
     @staticmethod
     def is_available() -> bool:
         return True
+
+    # torch.manual_seed() seeds every registered device module, and warns about
+    # one that does not offer these two. Nothing on the device draws random
+    # numbers: a hypervector is generated on the host and sent over, so there
+    # is no per-device generator to seed and no fork state to lose. These
+    # answer the question rather than do anything.
+
+    @staticmethod
+    def manual_seed(seed: int) -> None:
+        return None
+
+    @staticmethod
+    def manual_seed_all(seed: int) -> None:
+        return None
+
+    @staticmethod
+    def _is_in_bad_fork() -> bool:
+        return False
 
 
 torch._register_device_module("sparsr", _SparsrDeviceModule)

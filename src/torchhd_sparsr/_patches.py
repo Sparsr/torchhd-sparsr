@@ -9,7 +9,7 @@ transparently. `bundle()`/`permute()`/`*_similarity()` are each composed of
 several aten ops in torchhd (`eq`, `where`, `bernoulli_`, `roll`, `matmul`,
 ...) that don't individually map onto Sparsr's bitwise instructions -- most
 fundamentally, `eq`'s complement is dense and dense data can't survive
-CMEM's sparse compression codec (see csrc/sparsr_backend.cpp's
+WMEM's sparse compression codec (see csrc/sparsr_backend.cpp's
 check_fits_device) -- so those are patched at the Python method level
 instead of the aten level.
 
@@ -23,13 +23,13 @@ check here would be unreachable code.
 `bundle()` is the operation this module has to refuse, and why is worth
 stating in full. torchhd's BSC bundle is
 `where(a == b, a, tiebreak)` with `tiebreak` drawn from a fair coin. A fair
-coin flip over 4096 bits is dense, and dense data does not fit CMEM, so the
+coin flip over 4096 bits is dense, and dense data does not fit WMEM, so the
 tiebreak below is drawn at `_TIEBREAK_SPARSITY` instead. That makes the coin
 enormously biased towards 0, so every position where the two operands
 disagree is resolved to 0 and the bundle of two sparse hypervectors comes
 back as the all-zero hypervector -- a valid-looking tensor carrying no
 information. `_patched_bundle` therefore refuses whenever the operands
-disagree anywhere, rather than returning that. An uncompressed CMEM path
+disagree anywhere, rather than returning that. An uncompressed WMEM path
 would lift the density ceiling and make a fair tiebreak storable; it is
 planned but not built.
 """
@@ -42,7 +42,7 @@ from torchhd.tensors.bsc import BSCTensor
 from . import _C
 
 # Density for bundle()'s random tiebreak coin flips. Must be low enough that
-# the tiebreak tensor reliably fits Sparsr's CMEM LIL-32b compression codec;
+# the tiebreak tensor reliably fits Sparsr's WMEM LIL-32b compression codec;
 # torchhd's own default (dense, sparsity=0.5) tiebreak cannot be represented
 # on Sparsr hardware at all. See check_fits_device in
 # csrc/sparsr_backend.cpp for the exact limit this is chosen to comfortably
@@ -82,14 +82,14 @@ def _bundle_tiebreak_gap(disagreements: int, dimensions: int) -> str:
         "device for these two hypervectors. torchhd resolves every position "
         "where the operands disagree with a fair coin flip, and these disagree "
         f"in {disagreements} of {dimensions} positions. A fair coin flip is "
-        "dense, and dense data does not fit Sparsr's CMEM: the LIL-32b codec "
+        "dense, and dense data does not fit Sparsr's WMEM: the LIL-32b codec "
         f"has room for only {_C.LIL_MAX_NONZERO_CHUNKS} of "
         f"{_C.LIL_CHUNK_COUNT} 32-bit chunks. Sparsr therefore draws its "
-        "tiebreak at the low density CMEM can store, which leaves essentially "
+        "tiebreak at the low density WMEM can store, which leaves essentially "
         "every disagreeing position at 0 -- so the result would come back "
         "biased towards the all-zero hypervector instead of the bundle you "
         "asked for. This is a known hardware limit, not a bug in your code: "
-        "bundle on the host instead (`.to('cpu')`). An uncompressed CMEM path "
+        "bundle on the host instead (`.to('cpu')`). An uncompressed WMEM path "
         "that would lift this density ceiling is planned but not built."
     )
 
