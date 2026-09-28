@@ -1,8 +1,8 @@
 """The package runs its operations on the Sparsr VM, and says so.
 
-The loader picks a backend from `SPARSR_BACKEND` and defaults to `vm`, the Sparsr VM, which
-runs RV32I like libsparsr_hdc's kernels. The package also names `vm` itself when the
-variable is unset, so the choice is visible in the environment.
+The loader picks a backend from `SPARSR_BACKEND`. The package names `vm`, the Sparsr VM, which
+runs RV32I like libsparsr_hdc's kernels, when the variable is unset, so the choice is visible in
+the environment and never left to the loader.
 
 A backend that cannot be loaded, or lacks a call the package needs, answers "no device":
 nothing runs and reads return nothing. `hdc_init()` checks for that rather than assuming a

@@ -33,10 +33,11 @@ names, and the table says what each one needs from this wheel:
 | `fpgaf2` | Sparsr on a real F2 card. | No. Same as `fpgasim` |
 
 The kernels behind these operations are RV32I, which is what the VM runs. The package sets
-`SPARSR_BACKEND=vm` at import time when the variable is unset. That is the host library's default
-anyway, so it only makes the choice visible. An explicit choice still wins. The host library never
-swaps in another device: if the backend you name cannot be loaded, every call answers "no device",
-and the package refuses to import rather than return results no device computed.
+`SPARSR_BACKEND=vm` at import time when the variable is unset, so a result always comes from the
+VM and never from whatever device the host library would pick on its own. An explicit choice still
+wins. The host library never swaps in another device for one you named: if that backend cannot be
+loaded, every call answers "no device", and the package refuses to import rather than return
+results no device computed.
 
 ## Examples
 
