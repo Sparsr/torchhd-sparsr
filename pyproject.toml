@@ -9,7 +9,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "torchhd-sparsr"
 version = "0.2.1"
-description = "Sparsr backend for Torchhd: run VSA/HDC operations on the Sparsr processor (software emulator or FPGA) via a real PyTorch device ('sparsr')."
+description = "Sparsr backend for Torchhd: run VSA/HDC operations on the Sparsr processor (the Sparsr VM or an FPGA) via a real PyTorch device ('sparsr')."
 readme = "README.md"
 requires-python = ">=3.9"
 authors = [{ name = "Sparsr" }]
@@ -39,7 +39,7 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
     "Typing :: Typed",
 ]
-# The sources and libsparsr_hdc are MIT. The four Sparsr runtime binaries the wheel
+# The sources and libsparsr_hdc are MIT. The three Sparsr runtime binaries the wheel
 # bundles are not, and one bare "MIT" over that mix would grant redistribution and
 # reverse-engineering rights the runtime does not come with. LICENSE-RUNTIME names them.
 license = "MIT AND LicenseRef-Proprietary"

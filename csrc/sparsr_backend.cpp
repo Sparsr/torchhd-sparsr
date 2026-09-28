@@ -433,7 +433,7 @@ PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
   m.def("similarity", &similarity, "Overlap, left weight and right weight of two 'sparsr' hypervectors.");
   // Exported so _patches.py can quote the real ceiling in its error messages
   // rather than re-typing the numbers. Two copies of one constant is how a
-  // CMEM-depth mismatch (64 in the RTL, 32 in softemu) once happened.
+  // CMEM-depth mismatch (64 in the RTL, 32 in a software model) once happened.
   m.attr("LIL_MAX_NONZERO_CHUNKS") = HDC_MAX_STORABLE_LANES;
   m.attr("LIL_CHUNK_COUNT") = HDC_LANES;
 }

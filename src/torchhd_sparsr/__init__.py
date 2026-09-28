@@ -35,11 +35,11 @@ from __future__ import annotations
 import os
 import pathlib
 
-# libsparsr_hdc's kernels are RV32I, so they run on the Sparsr VM. `softemu`, the loader's
-# default, executes MIPS words and would read the same images as something else entirely --
-# the two backends are not interchangeable, which is why they have separate names. Setting
-# this before `_C` is imported is what makes it take effect: libsparsr_host resolves the
-# backend once, on first use.
+# libsparsr_hdc's kernels are RV32I, so they run on the Sparsr VM. `vm` is already the
+# loader's default, so this line changes nothing: it only names the default explicitly, so
+# that `SPARSR_BACKEND` always says which device the package runs on. Setting it before
+# `_C` is imported is what would make it take effect: libsparsr_host resolves the backend
+# once, on first use.
 #
 # `setdefault`, not an assignment: `SPARSR_BACKEND=fpgaf2` has to keep working, since the
 # whole point of the loader's indirection is that this package is agnostic about which

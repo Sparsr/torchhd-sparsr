@@ -8,10 +8,9 @@ Developer Zone, and it holds exactly what this build needs:
 
     include/sparsr_hdc.h        the header _C compiles against
     lib/libsparsr_hdc.so        the HDC library
-    lib/libsparsr_host.so       the Sparsr runtime, and the three backends
-    lib/libsparsr_vm.so         libsparsr_host.so records as DT_NEEDED entries
-    lib/libsparsr_vmproc.so
-    lib/libsparsr_softemu.so
+    lib/libsparsr_host.so       the Sparsr runtime
+    lib/libsparsr_vm.so         the Sparsr VM, the default backend
+    lib/libsparsr_vmproc.so     the client for the VM in its own process
 
 Nothing else is needed: no RISC-V toolchain, no other SDK, no other checkout. With
 SPARSR_HDC_ROOT unset the build stops and says so.
@@ -29,19 +28,19 @@ from torch.utils.cpp_extension import BuildExtension, CppExtension
 PACKAGE_ROOT = pathlib.Path(__file__).parent.resolve()
 NATIVE_DIR = PACKAGE_ROOT / "src" / "torchhd_sparsr" / "_native"
 
-# libsparsr_host.so links against the first three, so all of them have to travel with it.
+# libsparsr_host.so loads each backend at run time from its own directory, so the backends
+# it should be able to reach have to travel with it.
 NATIVE_LIBS = (
-    "libsparsr_softemu.so",
-    # The out-of-process backend, reached with SPARSR_BACKEND=vmproc. It has to ship
-    # whether or not anything here uses it: libsparsr_host.so records it as a DT_NEEDED
-    # entry, so a wheel without it fails to import at all rather than merely missing one
-    # backend. It costs the wheel about 20 KB and imposes nothing -- it is plain C and
+    # The out-of-process backend, reached with SPARSR_BACKEND=vmproc. libsparsr_host.so only
+    # loads it when that backend is chosen, but it ships anyway: without it, vmproc answers
+    # "no device". It costs the wheel about 20 KB and imposes nothing -- it is plain C and
     # links against libc alone.
     "libsparsr_vmproc.so",
+    # The Sparsr VM, the default backend.
     "libsparsr_vm.so",
     "libsparsr_host.so",
     # The HDC/VSA library: every operation this package performs is a call into it, and
-    # `_C` records it as a DT_NEEDED entry, so the same rule applies.
+    # `_C` records it as a DT_NEEDED entry, so the package cannot import without it.
     "libsparsr_hdc.so",
 )
 
@@ -69,7 +68,7 @@ def _hdc_root() -> pathlib.Path:
 def _strip(binary: pathlib.Path) -> None:
     """Remove the symbol table and every debug section from a binary the wheel carries.
 
-    Four of the bundled libraries are proprietary, and their licence says nobody may
+    Three of the bundled libraries are proprietary, and their licence says nobody may
     reverse engineer them. The published 0.2.0 wheel carried three of them with full DWARF
     debug information: source file names, line tables, the location of every local
     variable. That hands over most of what disassembly would cost. The compiled extension

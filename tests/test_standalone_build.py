@@ -33,7 +33,6 @@ BUNDLED_LIBRARIES = {
     "libsparsr_host.so",
     "libsparsr_vm.so",
     "libsparsr_vmproc.so",
-    "libsparsr_softemu.so",
 }
 
 

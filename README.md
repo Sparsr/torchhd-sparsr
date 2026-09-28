@@ -28,16 +28,15 @@ names, and the table says what each one needs from this wheel:
 | `SPARSR_BACKEND` | What runs | In this wheel |
 | --- | --- | --- |
 | `vm` | The Sparsr VM, in your process. **The default.** | Yes |
-| `softemu` | The original MIPS software emulator. Not usable here: see below. | Yes, but it runs the wrong instruction set for these kernels |
 | `vmproc` | The Sparsr VM in a process of its own, reached over its wire protocol. | The client is. The `sparsr-vm` executable is not: point `SPARSR_VM_BINARY` at one from the Sparsr SDK, or `SPARSR_VM_ENDPOINT` at a VM already running |
-| `fpgasim` | Sparsr on the FPGA simulator. | No. The host library falls back to `softemu` with a warning on stderr |
-| `fpgaf2` | Sparsr on a real F2 card. | No. Same fallback |
+| `fpgasim` | Sparsr on the FPGA simulator. | No. Every call answers "no device", with a warning on stderr, so the import fails |
+| `fpgaf2` | Sparsr on a real F2 card. | No. Same as `fpgasim` |
 
-**Not `softemu`, and the difference is not cosmetic.** The two backends execute different
-instruction sets: softemu runs MIPS words, the VM runs RV32I, and the kernels behind these operations
-are RV32I. The same image on softemu decodes to something else entirely, so the package selects `vm`
-at import time rather than accepting the loader's default. It only fills the variable in when it is
-unset, so an explicit choice still wins.
+The kernels behind these operations are RV32I, which is what the VM runs. The package sets
+`SPARSR_BACKEND=vm` at import time when the variable is unset. That is the host library's default
+anyway, so it only makes the choice visible. An explicit choice still wins. The host library never
+swaps in another device: if the backend you name cannot be loaded, every call answers "no device",
+and the package refuses to import rather than return results no device computed.
 
 ## What this package computes: nothing
 
@@ -158,8 +157,8 @@ That is the whole install step. The wheel already contains:
 - the HDC library and its device kernels,
 - the compiled PyTorch extension that registers the `"sparsr"` device.
 
-Operations run on the software emulator by default, so Sparsr hardware is optional. You do not
-need a RISC-V toolchain, a compiler, or any other SDK. A wheel is published per CPython version,
+Operations run on the Sparsr VM by default, a software model of the processor, so Sparsr hardware
+is optional. You do not need a RISC-V toolchain, a compiler, or any other SDK. A wheel is published per CPython version,
 for Linux on x86-64.
 
 **Each wheel is built against one PyTorch minor version** and uses libtorch's C++ ABI directly, the
@@ -179,9 +178,9 @@ That needs a C++ compiler and the PyTorch you intend to run against, and nothing
 
 The sources of this package are MIT, and so is `libsparsr_hdc`, the library every operation calls
 into. Both are on GitHub: [torchhd-sparsr](https://github.com/Sparsr/torchhd-sparsr) and
-[libsparsr-hdc](https://github.com/Sparsr/libsparsr-hdc). The wheel also bundles four proprietary
-binaries, the Sparsr host runtime and the device model: `libsparsr_host.so`, `libsparsr_vm.so`,
-`libsparsr_vmproc.so` and `libsparsr_softemu.so`. Their terms are in `LICENSE-RUNTIME`, which is
+[libsparsr-hdc](https://github.com/Sparsr/libsparsr-hdc). The wheel also bundles three proprietary
+binaries, the Sparsr host runtime and the device model: `libsparsr_host.so`, `libsparsr_vm.so` and
+`libsparsr_vmproc.so`. Their terms are in `LICENSE-RUNTIME`, which is
 packaged inside the wheel beside `LICENSE`. The package metadata says the same thing in one line:
 `MIT AND LicenseRef-Proprietary`.
 

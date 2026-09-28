@@ -29,8 +29,9 @@ print("--- Active Bits (these hypervectors are >99.8% sparse) ---")
 print(f"Hypervector a:\n\t{active_bit_positions(a)}")
 print(f"Hypervector b:\n\t{active_bit_positions(b)}")
 
-# Move both hypervectors to the Sparsr processor (the software emulator by
-# default; set SPARSR_BACKEND=fpgaf2 to run on real Sparsr FPGA hardware).
+# Move both hypervectors to the Sparsr processor (the Sparsr VM, a software
+# model of the processor, by default; set SPARSR_BACKEND=fpgaf2 to run on
+# real Sparsr FPGA hardware).
 # From here on, standard Torchhd calls transparently dispatch to Sparsr
 # hardware -- no torchhd_sparsr-specific API needed, same as moving tensors
 # to "cuda".

@@ -1,14 +1,13 @@
 """The package runs its operations on the Sparsr VM, and says so.
 
-The loader picks a backend from `SPARSR_BACKEND` and defaults to `softemu`. That default is
-wrong for this package: libsparsr_hdc's kernels are RV32I and softemu executes MIPS words,
-so the same image means two different things and only one of them is this package's.
+The loader picks a backend from `SPARSR_BACKEND` and defaults to `vm`, the Sparsr VM, which
+runs RV32I like libsparsr_hdc's kernels. The package also names `vm` itself when the
+variable is unset, so the choice is visible in the environment.
 
-That failure used to be silent -- softemu would read the image, execute whatever the words
-happen to decode to, and return an untouched result row. It is loud now: a similarity is
-a population-count reduce, and `hdc_init()` probes the device with a known
-pair rather than assuming it can run one. A backend that cannot answer is refused at import
-instead of answering every similarity with whatever data memory held.
+A backend that cannot be loaded, or lacks a call the package needs, answers "no device":
+nothing runs and reads return nothing. `hdc_init()` checks for that rather than assuming a
+device is there, so a backend that cannot answer is refused at import instead of answering
+every similarity with made-up data.
 
 So these tests pin three things: that the package selects the VM, that it still lets a
 caller choose a different Sparsr device, and that choosing one which cannot run the kernels
@@ -36,9 +35,8 @@ def test_package_selects_the_vm_backend_by_default() -> None:
 # returned because this has to happen in a fresh interpreter: the backend is resolved once,
 # on first use, so a process that has already imported the package cannot re-choose.
 # `!r` on the error keeps the outcome to one line whatever the message contains, which is
-# what lets the two values be read off the end of stdout. A backend that cannot serve a call
-# is chatty on the way down -- the loader announces each fall-back and softemu narrates every
-# instruction -- so the last two lines are taken rather than the only two.
+# what lets the two values be read off the end of stdout. Only the last two lines are taken,
+# in case anything else lands on stdout on the way down.
 _REPORT_BACKEND_AND_OUTCOME = (
     "import os\n"
     "outcome = 'initialised'\n"
@@ -77,15 +75,15 @@ def test_an_explicit_backend_choice_is_left_alone() -> None:
 def test_a_backend_that_cannot_run_the_kernels_is_refused() -> None:
     """The other half of leaving the choice alone: saying so when the choice cannot work.
 
-    `fpgasim` falls back to softemu for the calls it does not provide, and softemu executes
-    MIPS words -- so libsparsr_hdc's RV32I kernels decode to something else entirely and its
-    population-count reduce never runs. `hdc_init()` probes for exactly that and raises here,
-    where previously the import succeeded and every similarity afterwards reported
-    whatever data memory happened to hold.
+    `fpgasim` is not in this wheel, so every call the package makes answers "no device" and
+    the host library says so on stderr. `hdc_init()` sees the device read come back empty and
+    reports HDC_ERROR_DEVICE, which the package raises at import rather than letting every
+    similarity afterwards report data that no device computed.
     """
     _selected, outcome, stderr = _import_under_backend("fpgasim")
     assert outcome.startswith("refused: "), f"outcome was {outcome!r}, stderr {stderr!r}"
     assert "HDC_ERROR_DEVICE" in outcome, outcome
+    assert "no device answers" in stderr, stderr
 
 
 def test_the_bundled_native_libraries_are_present() -> None:
