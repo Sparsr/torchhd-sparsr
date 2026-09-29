@@ -33,8 +33,10 @@ BUNDLED_LIBRARIES = {
     "libsparsr_host.so",
     "libsparsr_vm.so",
     "libsparsr_vmproc.so",
-    "libsparsr_softemu.so",
 }
+
+# Bundled as well when the HDC tarball comes from an older runtime release that links it.
+LEGACY_LIBRARIES = {"libsparsr_softemu.so"}
 
 
 @pytest.mark.skipif(not os.environ.get("SPARSR_HDC_ROOT"), reason="SPARSR_HDC_ROOT is not set: no unpacked HDC tarball to build against")
@@ -70,7 +72,9 @@ def test_the_package_builds_from_its_own_sources_and_an_hdc_tarball(tmp_path: pa
     with zipfile.ZipFile(wheels[0]) as wheel:
         names = set(wheel.namelist())
     bundled = {pathlib.Path(n).name for n in names if "/_native/" in n and n.endswith(".so")}
-    assert bundled == BUNDLED_LIBRARIES, f"the wheel bundles {sorted(bundled)}, expected {sorted(BUNDLED_LIBRARIES)}"
+    assert BUNDLED_LIBRARIES <= bundled <= BUNDLED_LIBRARIES | LEGACY_LIBRARIES, (
+        f"the wheel bundles {sorted(bundled)}, expected {sorted(BUNDLED_LIBRARIES)}"
+    )
     assert any(n.startswith("torchhd_sparsr/_C.") for n in names), "the compiled extension is missing from the wheel"
 
 

@@ -200,8 +200,8 @@ def test_the_metadata_requires_the_torch_minor_it_was_built_against():
 def test_the_wheel_declares_its_split_licence():
     """MIT for the sources, proprietary for the bundled runtime, both files in the wheel.
 
-    The wheel bundles five native libraries. One, ``libsparsr_hdc.so``, is MIT
-    like the package. The other four are the Sparsr host runtime and device
+    The wheel bundles four native libraries. One, ``libsparsr_hdc.so``, is MIT
+    like the package. The other three are the Sparsr host runtime and device
     model, and they are proprietary. A bare ``License: MIT`` over that mix would
     grant redistribution and reverse-engineering rights the runtime does not
     come with, so the metadata carries a licence expression that says both, and
@@ -223,7 +223,8 @@ def test_the_wheel_declares_its_split_licence():
     assert shipped == ["LICENSE", "LICENSE-RUNTIME", "THIRD-PARTY-NOTICES"], f"licence files inside the wheel: {shipped}"
 
     runtime_terms = (licences_dir / "LICENSE-RUNTIME").read_text(encoding="utf-8")
-    for lib in ("libsparsr_host.so", "libsparsr_vm.so", "libsparsr_vmproc.so", "libsparsr_softemu.so"):
+    bundled = {p.name for p in _shipped_binaries()}
+    for lib in ("libsparsr_host.so", "libsparsr_vm.so", "libsparsr_vmproc.so", *(bundled & {"libsparsr_softemu.so"})):
         assert lib in runtime_terms, f"{lib} is bundled but LICENSE-RUNTIME does not name it"
     assert "libsparsr_hdc.so" in runtime_terms, (
         "LICENSE-RUNTIME should say in so many words that the HDC library is not covered by it"
@@ -297,16 +298,18 @@ def _shipped_binaries() -> list[pathlib.Path]:
 
 
 def test_the_package_ships_the_binaries_these_checks_expect():
-    """Six ELF files: the extension and the five runtime libraries. Fewer means the
-    checks below stopped checking something."""
-    assert len(_shipped_binaries()) == 6, [p.name for p in _shipped_binaries()]
+    """The extension and the four runtime libraries, plus the software emulator when the wheel
+    was built from an older runtime release. Fewer means the checks below stopped checking
+    something."""
+    names = {p.name for p in _shipped_binaries()}
+    assert len(names - {"libsparsr_softemu.so"}) == 5, sorted(names)
 
 
 @pytest.mark.parametrize("path", _shipped_binaries(), ids=_display_name)
 def test_every_binary_is_stripped(path: pathlib.Path):
     """No debug information in anything the wheel carries.
 
-    Four of the bundled libraries are proprietary, and ``LICENSE-RUNTIME`` says
+    Three of the bundled libraries are proprietary, and ``LICENSE-RUNTIME`` says
     nobody may reverse engineer them. The 0.2.0 wheel carried three of them with
     full DWARF: source file names, line tables, the location of every local
     variable. The extension is the other reason: 12.8 MB of a 13.1 MB file was
